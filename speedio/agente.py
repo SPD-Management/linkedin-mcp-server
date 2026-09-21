@@ -69,11 +69,18 @@ def para_o_servidor() -> None:
     Sem isto a validacao brigaria com o servidor pelo mesmo perfil do Chromium:
     o upstream tem todo um mecanismo de lease para esse caso, e a forma mais
     simples de nao depender dele e nao ter concorrente.
+
+    O `-and $_.Id -ne <nosso pid>` NAO e zelo: sem ele o agente se mata. Ele
+    roda por `uv run`, que usa o venv do proprio projeto, entao o caminho do
+    python dele TAMBEM casa com `*linkedin-mcp*`. Aconteceu: o log parava nesta
+    linha, sem erro, com codigo de saida 0, e o pedido ficava preso em
+    "entregue" ate o prazo estourar.
     """
     subprocess.run(
         ["powershell", "-NoProfile", "-Command",
          "Get-Process python* -ErrorAction SilentlyContinue | "
-         "Where-Object { $_.Path -like '*linkedin-mcp*' } | Stop-Process -Force"],
+         f"Where-Object {{ $_.Path -like '*linkedin-mcp*' -and $_.Id -ne {os.getpid()} }} | "
+         "Stop-Process -Force"],
         capture_output=True, check=False)
     time.sleep(2)
 
