@@ -70,17 +70,20 @@ def para_o_servidor() -> None:
     o upstream tem todo um mecanismo de lease para esse caso, e a forma mais
     simples de nao depender dele e nao ter concorrente.
 
-    O `-and $_.Id -ne <nosso pid>` NAO e zelo: sem ele o agente se mata. Ele
-    roda por `uv run`, que usa o venv do proprio projeto, entao o caminho do
-    python dele TAMBEM casa com `*linkedin-mcp*`. Aconteceu: o log parava nesta
-    linha, sem erro, com codigo de saida 0, e o pedido ficava preso em
-    "entregue" ate o prazo estourar.
+    O alvo e QUEM ESCUTA A PORTA, nunca "todo python cujo caminho contem
+    linkedin-mcp". Aquele filtro derrubava o proprio agente: o `uv run` lanca o
+    python do venv (`...\\linkedin-mcp-server\\.venv\\Scripts\\python.exe`) como
+    PAI, e matar o pai levava a arvore inteira. Media 9444 de `os.getpid()` e
+    10928 no filtro — excluir o proprio pid nao bastava. O sintoma era mudo:
+    log parando nesta linha, sem traceback, codigo de saida -1, e o pedido
+    preso em "entregue" ate o prazo estourar.
     """
     subprocess.run(
         ["powershell", "-NoProfile", "-Command",
-         "Get-Process python* -ErrorAction SilentlyContinue | "
-         f"Where-Object {{ $_.Path -like '*linkedin-mcp*' -and $_.Id -ne {os.getpid()} }} | "
-         "Stop-Process -Force"],
+         f"Get-NetTCPConnection -LocalPort {PORTA_MCP} -State Listen "
+         "-ErrorAction SilentlyContinue | "
+         "Select-Object -ExpandProperty OwningProcess -Unique | "
+         "ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }"],
         capture_output=True, check=False)
     time.sleep(2)
 
