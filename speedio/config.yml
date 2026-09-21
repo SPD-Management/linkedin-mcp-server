@@ -1,0 +1,6 @@
+﻿tunnel: caca-vagas-mcp
+credentials-file: C:\Users\Speedio\.cloudflared\CACA-VAGAS-MCP-UUID.json
+ingress:
+  - hostname: mcp-linkedin.speedio.com.br
+    service: http://127.0.0.1:8080
+  - service: http_status:404
