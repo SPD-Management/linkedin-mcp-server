@@ -27,7 +27,12 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-URL = os.environ.get("CACA_URL", "https://caca-vagas.speedio.com.br")
+# Desde 2026-09-21 o painel mora dentro do findhu: a API saiu de
+# `caca-vagas.speedio.com.br/api` para `findhu.app/api/admin/caca`, e a
+# credencial e o ADMIN_TOKEN do findhu. `CACA_TOKEN` continua sendo o nome da
+# variavel so porque o `_ambiente.ps1` le o valor de um ARQUIVO com esse nome —
+# o conteudo e que mudou.
+URL = os.environ.get("CACA_URL", "https://findhu.app/api/admin/caca")
 TOKEN = os.environ.get("CACA_TOKEN", "")
 PORTA_MCP = int(os.environ.get("MCP_PORTA", "8080"))
 
@@ -45,7 +50,12 @@ def _chama(caminho: str, corpo: dict | None = None) -> dict:
         f"{URL}{caminho}",
         data=json.dumps(corpo or {}).encode(),
         headers={"content-type": "application/json",
-                 "authorization": f"Bearer {TOKEN}"},
+                 "authorization": f"Bearer {TOKEN}",
+                 # `Python-urllib/3.x` leva 403 da protecao de bot na zona do
+                 # findhu, antes de chegar ao Worker — o token nao salva. A zona
+                 # antiga da Speedio deixava passar, e so na mudanca de casa
+                 # isso apareceu. Qualquer UA proprio resolve.
+                 "user-agent": "caca-vagas-agente/1.0"},
         method="POST")
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.loads(r.read())
@@ -53,12 +63,12 @@ def _chama(caminho: str, corpo: dict | None = None) -> dict:
 
 def pega_pedido() -> dict | None:
     """Consome o cookie que espera, se houver. O Worker o apaga na entrega."""
-    return _chama("/api/sessao/pendente").get("cookie")
+    return _chama("/sessao/pendente").get("cookie")
 
 
 def responde(ok: bool, detalhe: str) -> None:
     try:
-        _chama("/api/sessao/resultado", {"ok": ok, "detalhe": detalhe[:400]})
+        _chama("/sessao/resultado", {"ok": ok, "detalhe": detalhe[:400]})
     except Exception as e:                      # noqa: BLE001
         fala(f"nao consegui responder ao painel: {e}")
 
