@@ -69,3 +69,13 @@ MESMO usuario dono do perfil) e sobe um Chromium proprio com `patchright`.
 > O token do tunnel aparece **cru na linha de comando do servico** (`Get-CimInstance
 > Win32_Service`). Qualquer um que liste processos nessa maquina o le. Se um dia
 > essa maquina for compartilhada, rotacione o tunnel.
+
+## O print de cada envio (2026-09-25)
+
+As tarefas das contas sobem `speedio\servidor.py` e nao mais
+`-m linkedin_mcp_server`: e o mesmo servidor, com os mesmos argumentos, mais a
+ferramenta `speedio_print` (JPEG em base64 da pagina que o browser da conta
+mostra agora). O caca-vagas a chama logo depois de cada `send_message` e
+`connect_with_person` e guarda a imagem com o envio — e a prova de que a
+mensagem saiu, por qual conta e para quem. Ela nunca abre browser nem login:
+sem Chromium de pe', responde `sem_navegador`.
